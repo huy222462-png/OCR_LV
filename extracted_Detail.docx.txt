@@ -1,0 +1,53 @@
+Tên đề tài: 
+“XÂY DỰNG HỆ THỐNG SỐ HÓA VÀ QUẢN LÝ TÀI LIỆU HÀNH CHÍNH NỘI BỘ ỨNG DỤNG CÔNG NGHỆ TRÍCH XUẤT THÔNG TIN (INFORMATION EXTRACTION)”
+YÊU CẦU CẦN ĐẠT
+Thu hẹp và giới hạn phạm vi đề tài
+Về loại tài liệu
+Hãy chọn đúng 1 đến 2 loại tài liệu hành chính có cấu trúc tương đối chuẩn (ví dụ: Công văn đến/đi, hoặc Tờ trình nội bộ).
+Về thông tin cần trích xuất (Information Extraction)
+Chỉ tập trung trích xuất 4-5 trường thông tin quan trọng nhất để phục vụ việc tìm kiếm sau này, ví dụ: Số hiệu văn bản, Ngày tháng năm, Cơ quan/Người ban hành, Trích yếu nội dung (tiêu đề)
+Về tính năng hệ thống
+Chỉ cần làm các chức năng cốt lõi: Tải tệp lên (PDF/Ảnh) -> Hệ thống tự động đọc và điền thông tin vào form -> Người dùng kiểm tra, chỉnh sửa lại nếu máy đọc sai -> Lưu vào CSDL -> Tìm kiếm lại tài liệu khi cần
+CÔNG NGHỆ SỬ DỤNG
+Đề xuất sử dụng hệ sinh thái Python cho toàn bộ dự án.
+Số hoá & Nhận dạng chữ (OCR)
+Dùng thư viện pytesseract (mã nguồn mở Tesseract OCR của Google) hoặc nếu muốn nhàn và chính xác hơn, em có thể dùng API của các bên thứ ba (như Google Cloud Vision API, Azure OCR) với gói miễn phí dành cho sinh viên.
+Trích xuất thông tin (IE)
+Mức độ cơ bản: Dùng Regular Expression (Regex) kết hợp với các quy tắc vị trí. (Ví dụ: tìm chuỗi có định dạng “Số: [chữ số]/[chữ cái]”).
+Mức độ nâng cao (nếu em làm tốt Regex rồi): Dùng thư viện NLP như spaCy hoặc vncorenlp để nhận diện thực thể (NER). Không tự train mô hình Deep Learning từ đầu.
+Xây dựng web/Hệ thống quản lý
+Dùng Flask hoặc Django (Python). Giao diện (Frontend) dùng các template Bootstrap có sẵn trên mạng để tiết kiệm thời gian
+CSDL
+Dùng MySQL hoặc PostgreSQL hoặc khác,….
+CÁC GIAI ĐOẠN THỰC HIỆN BẢO ĐẢM ĐÚNG TIẾN ĐỘ
+Giai đoạn 1: CHUẨN BỊ DỮ LIỆU (1 – 2 tuần)
+Xin/tự tạo khoảng 50 - 100 mẫu văn bản hành chính (file ảnh chụp hoặc PDF scan) đúng với loại tài liệu đã chọn ở phần 1.
+Giai đoạn 2: XỬ LÝ OCR và Trích xuất thông tin (3 – 4 tuần) [Rất quan trọng]
+Viết một đoạn script Python nhận đầu vào là ảnh/PDF và đầu ra là toàn bộ văn bản (text) thô.
+Viết tiếp các hàm (dùng Regex/Luật) để dò tìm và “cắt” đúng các trường thông tin: Số hiệu, Ngày, Người ký... từ đoạn text thô đó.
+Giai đoạn 3: XÂY DỰNG HỆ THỐNG WEB (3 – 4 tuần)
+Tạo Database lưu trữ: Thông tin tài liệu và đường dẫn tới file gốc.
+Xây dựng giao diện Web: Trang upload file, trang hiển thị kết quả trích xuất để người dùng xác nhận (rất quan trọng, vì máy luôn có sai số), và trang danh sách/tìm kiếm tài liệu.
+Giai đoạn 4: TÍCH HỢP, KIỂM THỬ & VIẾT BÁO CÁO (3 – 4 tuần)
+Ghép code phần xử lý AI (Giai đoạn 2) vào Web (Giai đoạn 3).
+Chạy thử với các file mới để tính toán độ chính xác (Accuracy) của việc trích xuất.
+Viết quyển báo cáo khóa luận. Chú ý trình bày trung thực về độ chính xác của hệ thống và giải thích được nguyên nhân hệ thống nhận diện sai (do ảnh mờ, do form tài liệu lệch chuẩn, v.v.).
+TÀI LIỆU THAM KHẢO
+Nền tảng về Nhận dạng ký tự quang học (OCR)
+Để bảo vệ quyết định sử dụng Tesseract OCR (như GVHD  đã gợi ý), em cần trích dẫn bài báo gốc của tác giả tạo ra nó và tài liệu chính thức:
+Bài báo khoa học: Smith, R. (2007). An Overview of the Tesseract OCR Engine. Trong kỷ yếu hội nghị International Conference on Document Analysis and Recognition (ICDAR).
+Cách dùng: Trích dẫn bài báo này trong Chương Tổng quan công nghệ, để chứng minh Tesseract là một công cụ OCR đã được kiểm chứng khoa học, có độ chính xác cao và được cộng đồng thế giới công nhận.
+Tài liêu kỹ thuật: Tài liệu chính thức của thư viện pytesseract trên PyPI hoặc GitHub.
+Cách dùng: Dùng làm cơ sở khi em trình bày mã nguồn và cách gọi API trong phần Hiện thực hệ thống.
+Nền tảng về Trích xuất thông tin (Information Extraction)
+Trích xuất thông tin là một nhánh lớn của Xử lý ngôn ngữ tự nhiên (NLP). Dù em dùng Regex cơ bản hay thư viện nâng cao, em đều cần có cơ sở lý thuyết vững chắc.
+Sách chuyên ngành chuẩn (Bắt buộc phải có): Jurafsky, D., & Martin, J. H. (2024). Speech and Language Processing (Bản nháp tái bản lần 3).
+Cách dùng: Đây được xem là thành phần cốt lõi của ngành NLP. Em hãy đọc và trích dẫn Chương 2 (Regular Expressions, Text Normalization, Edit Distance) và Chương 17 (Information Extraction). Nó sẽ cho em toàn bộ cơ sở lý luận về cách máy tính dùng Regex để bắt khớp các mẫu (pattern) như số hiệu, ngày tháng trong văn bản.
+Bài báo về NLP Tiếng Việt (Nếu em dùng thư viện nâng cao): Vu, T., Nguyen, D. Q., Nguyen, D. Q., Dras, M., & Johnson, M. (2018). VnCoreNLP: A Vietnamese Natural Language Processing Toolkit. Trong kỷ yếu hội nghị NAACL-HLT.
+Cách dùng: Nếu em sử dụng VnCoreNLP để nhận diện Tên người/Tên cơ quan ban hành, hãy trích dẫn bài báo này để chứng minh em đang dùng một công cụ đạt chuẩn state-of-the-art cho tiếng Việt.
+Nền tảng về Thiết kế Hệ thống và Quản lý tài liệu 
+Phần mềm em viết ra cần tuân thủ các nguyên tắc của Kỹ thuật phần mềm (Software Engineering), đặc biệt là mô hình kiến trúc (như MVC) và quản lý cơ sở dữ liệu.
+Sách Kỹ thuật phần mềm: Sommerville, I. (2015). Software Engineering (Tái bản lần 10). Pearson.
+Cách dùng: Dùng sách này để trích dẫn lý thuyết cho Chương Phân tích và Thiết kế hệ thống (cách vẽ Use Case, biểu đồ tuần tự, thiết kế cơ sở dữ liệu quan hệ).
+Tài liệu kỹ thuật Framework: Tài liệu chính thức (Official Documentation) của Django hoặc Flask.
+Cách dùng: Chứng minh lý do chọn framework, tính bảo mật, và khả năng mở rộng của hệ thống web.

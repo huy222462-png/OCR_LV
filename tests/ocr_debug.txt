@@ -1,0 +1,4 @@
+TXT_REPR:
+None
+ERROR:
+tesseract is not installed or it's not in your PATH. See README file for more information.

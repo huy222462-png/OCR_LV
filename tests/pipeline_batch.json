@@ -1,0 +1,26 @@
+{
+  "sample_input.png": {
+    "so_hieu_van_ban": "123/QĐ-UBND",
+    "ngay_ban_hanh": "2024-05-12",
+    "co_quan_ban_hanh": "ban hành quy chế nội bộ",
+    "trich_yeu_noi_dung": "ề việc ban hành quy chế nội bộ",
+    "toan_van_chu_tho": "Số: 123/QĐ-UBND\nNgày 12/05/2024\nV/v: Về việc ban hành quy chế nội bộ\nNội dung: Văn bản mẫu dùng để thử OCR và trích xuất.\nThử nghiệm sẽ kiểm tra số hiệu, ngày, cơ quan và trích yếu.",
+    "missing_fields": []
+  },
+  "sample_input_proc.png": {
+    "so_hieu_van_ban": "123/QĐĐ-UBND",
+    "ngay_ban_hanh": "2024-05-12",
+    "co_quan_ban_hanh": "ban hành quy chế nội bộ",
+    "trich_yeu_noi_dung": "Về việc ban hành quy chế nội bộ",
+    "toan_van_chu_tho": "Số: 123/QĐĐ-UBND\nNgày 12/05/2024\nVA: Về việc ban hành quy chế nội bộ\nNội dung: Văn bản mẫu dùng để thử OCR và trích xuất.\nThử nghiệm sẽ kiểm tra số hiệu, ngày, cơ quan và trích yếu.",
+    "missing_fields": []
+  },
+  "sample_input_proc_proc.png": {
+    "so_hieu_van_ban": "123QĐĐ-UBND",
+    "ngay_ban_hanh": "2024-05-12",
+    "co_quan_ban_hanh": "ban hành quy chế nội bộ",
+    "trich_yeu_noi_dung": "Về việc ban hành quy chế nội bộ",
+    "toan_van_chu_tho": "Số: 123QĐĐ-UBND\nNgày 12/05/2024\nVA: Về việc ban hành quy chế nội bộ\nNội dung: Văn bản mẫu dùng để thử OCR và trích xuất.\nThử nghiệm sẽ kiểm tra số hiệu, ngày, cơ quan và trích yếu.",
+    "missing_fields": []
+  }
+}

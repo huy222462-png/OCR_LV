@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập | OCR Văn bản{% endblock %}
+{% block main_class %}login-shell{% endblock %}
+
+{% block content %}
+<div class="login-page">
+    <div class="login-hero">
+        <div class="login-badge">OCR Văn bản</div>
+        <h1>Đăng nhập để quản lý tài liệu nhanh hơn</h1>
+        <p>Phân tích, tra cứu và quản trị luồng văn bản trên một giao diện gọn gàng, tập trung.</p>
+        <ul>
+            <li>Tài khoản mẫu: admin</li>
+            <li>Mật khẩu mẫu: admin123</li>
+            <li>Kết nối SQL Server host qua Docker</li>
+        </ul>
+    </div>
+
+    <div class="login-card card shadow-lg border-0">
+        <div class="card-body p-4 p-md-5">
+            <h2 class="h4 mb-1">Chào mừng trở lại</h2>
+            <p class="text-muted mb-4">Nhập thông tin đăng nhập để vào hệ thống.</p>
+
+            {% if error %}
+            <div class="alert alert-danger py-2">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" class="vstack gap-3">
+                <div>
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input type="text" name="username" class="form-control form-control-lg" placeholder="admin" value="{{ username_value or '' }}" required>
+                </div>
+                <div>
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Đăng nhập</button>
+            </form>
+
+            <div class="mt-4 small text-muted">
+                Nếu bạn vừa seed xong, dùng tài khoản <strong>admin / admin123</strong>.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

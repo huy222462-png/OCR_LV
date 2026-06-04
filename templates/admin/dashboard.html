@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Quản trị hệ thống{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">⚙️ Bảng điều khiển Admin</h3>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-primary">{{ stats.tong_nguoi_dung }}</div>
+            <div class="text-muted">Người dùng</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-success">{{ stats.tong_tai_lieu }}</div>
+            <div class="text-muted">Tài liệu</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-warning">{{ stats.tai_lieu_cho_xac_nhan }}</div>
+            <div class="text-muted">Chờ xác nhận</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-info">{{ stats.tong_nhan }}</div>
+            <div class="text-muted">Nhãn tài liệu</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>👤 Quản lý tài khoản</h5>
+                <p class="text-muted small">Tạo, chỉnh sửa, vô hiệu hóa tài khoản người dùng.</p>
+                <a href="{{ url_for('admin.nguoi_dung_page') }}" class="btn btn-primary btn-sm">Mở quản lý</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>🏷️ Quản lý nhãn</h5>
+                <p class="text-muted small">Thêm, sửa, xóa nhãn phân loại tài liệu.</p>
+                <a href="{{ url_for('admin.nhan_page') }}" class="btn btn-primary btn-sm">Mở quản lý</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>📋 Audit Log</h5>
+                <p class="text-muted small">Xem lịch sử toàn bộ thao tác trên hệ thống.</p>
+                <a href="{{ url_for('admin.audit_log_page') }}" class="btn btn-primary btn-sm">Xem log</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

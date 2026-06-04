@@ -1,0 +1,13 @@
+{
+  "so_hieu_van_ban": null,
+  "ngay_ban_hanh": null,
+  "co_quan_ban_hanh": null,
+  "trich_yeu_noi_dung": null,
+  "toan_van_chu_tho": "",
+  "missing_fields": [
+    "so_hieu_van_ban",
+    "ngay_ban_hanh",
+    "co_quan_ban_hanh",
+    "trich_yeu_noi_dung"
+  ]
+}

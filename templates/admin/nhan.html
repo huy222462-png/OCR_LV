@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Quản lý nhãn{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>🏷️ Quản lý nhãn tài liệu</h4>
+    <button class="btn btn-primary btn-sm" onclick="openCreate()">+ Thêm nhãn</button>
+</div>
+
+<div id="alertBox" class="alert d-none"></div>
+
+<div class="row g-3" id="labelGrid">
+    <div class="col-12 text-center text-muted">Đang tải...</div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="labelModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Thêm nhãn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="mb-3">
+                    <label class="form-label">Tên nhãn *</label>
+                    <input type="text" class="form-control" id="fTen" placeholder="Ví dụ: Khẩn cấp">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Màu sắc</label>
+                    <input type="color" class="form-control form-control-color" id="fMau" value="#6c757d">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-primary btn-sm" onclick="saveLabel()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const modal = new bootstrap.Modal(document.getElementById('labelModal'));
+
+async function loadLabels() {
+    const r = await fetch('/admin/api/labels');
+    const data = await r.json();
+    const grid = document.getElementById('labelGrid');
+    if (!data.length) {
+        grid.innerHTML = '<div class="col-12 text-muted text-center">Chưa có nhãn nào</div>';
+        return;
+    }
+    grid.innerHTML = data.map(l => `
+        <div class="col-md-3 col-sm-4 col-6">
+            <div class="card shadow-sm text-center p-3">
+                <span class="badge mb-2" style="background:${l.mau_sac_hien_thi};font-size:1rem">${l.ten_nhan}</span>
+                <small class="text-muted">${l.so_tai_lieu} tài liệu</small>
+                <div class="mt-2 d-flex gap-1 justify-content-center">
+                    <button class="btn btn-outline-primary btn-sm" onclick='openEdit(${JSON.stringify(l)})'>Sửa</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteLabel(${l.id_nhan},'${l.ten_nhan}')">Xóa</button>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+function showAlert(msg, type = 'success') {
+    const box = document.getElementById('alertBox');
+    box.className = `alert alert-${type}`;
+    box.textContent = msg;
+    box.classList.remove('d-none');
+    setTimeout(() => box.classList.add('d-none'), 3000);
+}
+
+function openCreate() {
+    document.getElementById('modalTitle').textContent = 'Thêm nhãn';
+    document.getElementById('editId').value = '';
+    document.getElementById('fTen').value = '';
+    document.getElementById('fMau').value = '#6c757d';
+    modal.show();
+}
+
+function openEdit(l) {
+    document.getElementById('modalTitle').textContent = 'Sửa nhãn';
+    document.getElementById('editId').value = l.id_nhan;
+    document.getElementById('fTen').value = l.ten_nhan;
+    document.getElementById('fMau').value = l.mau_sac_hien_thi;
+    modal.show();
+}
+
+async function saveLabel() {
+    const id = document.getElementById('editId').value;
+    const payload = {
+        ten_nhan: document.getElementById('fTen').value.trim(),
+        mau_sac_hien_thi: document.getElementById('fMau').value,
+    };
+    const url = id ? `/admin/api/labels/${id}` : '/admin/api/labels';
+    const r = await fetch(url, { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (r.ok) { modal.hide(); showAlert('Đã lưu nhãn.'); loadLabels(); }
+    else showAlert(data.error || 'Lỗi', 'danger');
+}
+
+async function deleteLabel(id, name) {
+    if (!confirm(`Xóa nhãn "${name}"?`)) return;
+    const r = await fetch(`/admin/api/labels/${id}`, { method: 'DELETE' });
+    const data = await r.json();
+    showAlert(data.message || data.error, r.ok ? 'success' : 'danger');
+    if (r.ok) loadLabels();
+}
+
+document.addEventListener('DOMContentLoaded', loadLabels);
+</script>
+{% endblock %}

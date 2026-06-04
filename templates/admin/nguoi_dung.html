@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Quản lý tài khoản{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>👤 Quản lý tài khoản</h4>
+    <button class="btn btn-primary btn-sm" onclick="openCreate()">+ Tạo tài khoản</button>
+</div>
+
+<div id="alertBox" class="alert d-none"></div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle" id="userTable">
+        <thead class="table-light">
+            <tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Chức vụ</th><th>Phòng ban</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr>
+        </thead>
+        <tbody id="userBody">
+            <tr><td colspan="7" class="text-center text-muted">Đang tải...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal tạo/sửa -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Tạo tài khoản</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="mb-2">
+                    <label class="form-label">Tên đăng nhập *</label>
+                    <input type="text" class="form-control" id="fUsername">
+                </div>
+                <div class="mb-2" id="pwField">
+                    <label class="form-label">Mật khẩu *</label>
+                    <input type="password" class="form-control" id="fPassword">
+                </div>
+                <div class="mb-2" id="pwNewField" style="display:none">
+                    <label class="form-label">Mật khẩu mới (để trống = không đổi)</label>
+                    <input type="password" class="form-control" id="fPasswordNew">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Họ tên *</label>
+                    <input type="text" class="form-control" id="fHoTen">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="fEmail">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Chức vụ *</label>
+                    <select class="form-select" id="fChucVu"></select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Phòng ban</label>
+                    <select class="form-select" id="fPhongBan">
+                        <option value="">-- Chọn phòng ban --</option>
+                    </select>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="fActive" checked>
+                    <label class="form-check-label">Kích hoạt</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-primary" onclick="saveUser()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let meta = {};
+const modal = new bootstrap.Modal(document.getElementById('userModal'));
+
+async function loadMeta() {
+    const r = await fetch('/admin/api/meta');
+    meta = await r.json();
+    const cv = document.getElementById('fChucVu');
+    cv.innerHTML = meta.chuc_vus.map(c => `<option value="${c.id}">${c.ten}</option>`).join('');
+    const pb = document.getElementById('fPhongBan');
+    pb.innerHTML = '<option value="">-- Chọn phòng ban --</option>' +
+        meta.phong_bans.map(p => `<option value="${p.id}">${p.ten}</option>`).join('');
+}
+
+async function loadUsers() {
+    const r = await fetch('/admin/api/users');
+    const data = await r.json();
+    const tbody = document.getElementById('userBody');
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Chưa có tài khoản</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(u => `
+        <tr>
+            <td><code>${u.ten_dang_nhap}</code></td>
+            <td>${u.ho_ten}</td>
+            <td><span class="badge bg-primary">${u.chuc_vu || '-'}</span></td>
+            <td>${u.phong_ban || '-'}</td>
+            <td><span class="badge ${u.trang_thai_hoat_dong ? 'bg-success' : 'bg-secondary'}">${u.trang_thai_hoat_dong ? 'Hoạt động' : 'Đã vô hiệu'}</span></td>
+            <td>${u.ngay_tao ? u.ngay_tao.slice(0,10) : '-'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick='openEdit(${JSON.stringify(u)})'>Sửa</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="disableUser(${u.id_nguoi_dung}, '${u.ten_dang_nhap}')">Vô hiệu</button>
+            </td>
+        </tr>`).join('');
+}
+
+function showAlert(msg, type = 'success') {
+    const box = document.getElementById('alertBox');
+    box.className = `alert alert-${type}`;
+    box.textContent = msg;
+    box.classList.remove('d-none');
+    setTimeout(() => box.classList.add('d-none'), 4000);
+}
+
+function openCreate() {
+    document.getElementById('modalTitle').textContent = 'Tạo tài khoản';
+    document.getElementById('editUserId').value = '';
+    document.getElementById('fUsername').value = '';
+    document.getElementById('fPassword').value = '';
+    document.getElementById('fHoTen').value = '';
+    document.getElementById('fEmail').value = '';
+    document.getElementById('fActive').checked = true;
+    document.getElementById('pwField').style.display = '';
+    document.getElementById('pwNewField').style.display = 'none';
+    modal.show();
+}
+
+function openEdit(u) {
+    document.getElementById('modalTitle').textContent = 'Chỉnh sửa tài khoản';
+    document.getElementById('editUserId').value = u.id_nguoi_dung;
+    document.getElementById('fUsername').value = u.ten_dang_nhap;
+    document.getElementById('fHoTen').value = u.ho_ten;
+    document.getElementById('fEmail').value = u.email || '';
+    document.getElementById('fChucVu').value = u.id_chuc_vu;
+    document.getElementById('fPhongBan').value = u.id_phong_ban || '';
+    document.getElementById('fActive').checked = u.trang_thai_hoat_dong;
+    document.getElementById('pwField').style.display = 'none';
+    document.getElementById('pwNewField').style.display = '';
+    modal.show();
+}
+
+async function saveUser() {
+    const id = document.getElementById('editUserId').value;
+    const payload = {
+        ten_dang_nhap: document.getElementById('fUsername').value.trim(),
+        ho_ten: document.getElementById('fHoTen').value.trim(),
+        email: document.getElementById('fEmail').value.trim(),
+        id_chuc_vu: parseInt(document.getElementById('fChucVu').value),
+        id_phong_ban: parseInt(document.getElementById('fPhongBan').value) || null,
+        trang_thai_hoat_dong: document.getElementById('fActive').checked,
+    };
+    if (!id) {
+        payload.mat_khau = document.getElementById('fPassword').value;
+    } else {
+        const pw = document.getElementById('fPasswordNew').value;
+        if (pw) payload.mat_khau_moi = pw;
+    }
+
+    const url = id ? `/admin/api/users/${id}` : '/admin/api/users';
+    const method = id ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (r.ok) {
+        modal.hide();
+        showAlert(id ? 'Đã cập nhật tài khoản.' : 'Đã tạo tài khoản.');
+        loadUsers();
+    } else {
+        showAlert(data.error || 'Lỗi', 'danger');
+    }
+}
+
+async function disableUser(id, name) {
+    if (!confirm(`Vô hiệu hóa tài khoản "${name}"?`)) return;
+    const r = await fetch(`/admin/api/users/${id}`, { method: 'DELETE' });
+    const data = await r.json();
+    showAlert(data.message || data.error, r.ok ? 'success' : 'danger');
+    if (r.ok) loadUsers();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadMeta();
+    await loadUsers();
+});
+</script>
+{% endblock %}

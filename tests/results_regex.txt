@@ -1,0 +1,16 @@
+CASE: Số: 123/QĐ-UBND Ngày 12/05/2024 V/v: Về việc ban hành...
+ expected so= 123/QĐ-UBND  got= 123/QĐ-UBND
+ expected ngay= 2024-05-12  got= 2024-05-12
+ expected trich= Về việc ban hành...  got= Về việc ban hành...
+---
+CASE: Số 45/TTr-NH Ngày 1 tháng 6 năm 2023 V: Tờ trình về...
+ expected so= 45/TTr-NH  got= 45/TTr-NH
+ expected ngay= 2023-06-01  got= 2023-06-01
+ expected trich= Tờ trình về...  got= Tờ trình về...
+---
+CASE: V/v- Phê duyệt kế hoạch Số: 78/KT-2022
+ expected so= 78/KT-2022  got= 78/KT-2022
+ expected ngay= None  got= None
+ expected trich= Phê duyệt kế hoạch  got= Phê duyệt kế hoạch
+---
+Score: 9 / 9 (field matches)

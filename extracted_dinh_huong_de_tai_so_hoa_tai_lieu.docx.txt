@@ -1,0 +1,404 @@
+TÀI LIỆU THIẾT KẾ HỆ THỐNG (SYSTEM DESIGN)
+Đề tài: Xây dựng hệ thống số hóa và quản lý tài liệu hành chính nội bộ ứng dụng công nghệ trích xuất thông tin (Information Extraction). 
+1. PHẠM VI VÀ GIỚI HẠN ĐỀ TÀI (SCOPE & LIMITATIONS)
+Loại tài liệu áp dụng: Tập trung xử lý 02 loại văn bản hành chính có cấu trúc chuẩn: Công văn (Đến/Đi) và Tờ trình nội bộ. 
+Trường thông tin cần trích xuất (04 trường cốt lõi):
+Số hiệu văn bản (Ví dụ: 123/QĐ-UBND, 45/TTr-NH) 
+Ngày ban hành (Chuẩn hóa về dạng YYYY-MM-DD để lưu trữ) 
+Cơ quan/Người ban hành (Ví dụ: Ủy ban nhân dân, Giám đốc,...) 
+Trích yếu nội dung (Tiêu đề chính của văn bản) 
+Định hướng công nghệ: Ứng dụng hệ sinh thái Python, sử dụng các mô hình AI đã được huấn luyện sẵn (Pre-trained Models) phục vụ OCR/NLP kết hợp với hệ luật (Regex) để trích xuất dữ liệu. Không tự huấn luyện (train) mô hình Học sâu (Deep Learning) từ đầu. 
+2. KIẾN TRÚC TỔNG THỂ HỆ THỐNG (HIGH-LEVEL ARCHITECTURE)
+Hệ thống được thiết kế theo kiến trúc Monolithic (Đơn khối) cải tiến, chia làm 3 tầng chính để tối ưu hiệu năng và thời gian triển khai: 
+Tầng Giao diện (Frontend): Sử dụng HTML5, CSS3, Bootstrap Template và JavaScript (AJAX). Đóng vai trò tiếp nhận tệp tải lên, hiển thị biểu mẫu (Form) dữ liệu được trích xuất tự động và hỗ trợ người dùng tìm kiếm. 
+Tầng Xử lý (Backend Server): Sử dụng ngôn ngữ Python (Framework Django hoặc Flask). Đây là trung tâm điều hướng, chứa thư viện tiền xử lý ảnh (OpenCV), bộ mã nguồn nhận dạng chữ (Pytesseract) và bộ lọc trích xuất thông tin (Regex Engine) kết hợp module NLP. 
+Tầng Lưu trữ (Database & File Storage):
+Cơ sở dữ liệu quan hệ (MySQL hoặc PostgreSQL): Lưu thông tin cấu trúc của văn bản (Số hiệu, Ngày tháng, Tiêu đề, Toàn văn chữ thô) phục vụ việc tra cứu, tìm kiếm. 
+Hệ thống tệp (Local Storage): Lưu trữ trực tiếp file ảnh hoặc file PDF gốc do người dùng tải lên máy chủ. 
+3. THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE DESIGN)
+Hệ thống sử dụng hệ quản trị cơ sở dữ liệu quan hệ với cấu trúc các bảng được chuẩn hóa và đánh chỉ mục để tối ưu hóa hiệu năng lưu trữ, tra cứu và tìm kiếm nâng cao: 
+3.1. Danh sách các bảng dữ liệu chi tiết
+Bảng 1: phong_ban (Quản lý Cơ cấu Phòng ban / Đơn vị nội bộ)
+id_phong_ban (INT, Primary Key, Auto Increment): Mã định danh phòng ban. 
+ma_phong_ban (VARCHAR(20), Unique): Mã viết tắt của phòng ban (Ví dụ: HCNS, KT, IT). 
+ten_phong_ban (VARCHAR(100)): Tên đầy đủ của phòng ban. 
+mo_ta (VARCHAR(255)): Mô tả chức năng nhiệm vụ của phòng ban. 
+Bảng 2: chuc_vu (Quản lý Chức vụ và Phân quyền hệ thống)
+id_chuc_vu (INT, Primary Key, Auto Increment): Mã định danh chức vụ. 
+ten_chuc_vu (VARCHAR(50), Unique): Tên chức vụ hoặc nhóm quyền (Ví dụ: Giám đốc, Trưởng phòng, Nhân viên). 
+mo_ta (VARCHAR(255)): Mô tả chi tiết phạm vi quyền hạn. 
+Bảng 3: nguoi_dung (Quản lý Tài khoản Nhân viên)
+id_nguoi_dung (INT, Primary Key, Auto Increment): Mã định danh người dùng. 
+ten_dang_nhap (VARCHAR(50), Unique): Tên tài khoản đăng nhập hệ thống. 
+mat_khau_ma_hoa (VARCHAR(255)): Mật khẩu đã được băm bảo mật (Bcrypt/PBKDF2). 
+ho_ten (VARCHAR(100)): Họ và tên đầy đủ của nhân viên. 
+email (VARCHAR(100), Unique): Email nội bộ của nhân viên. 
+id_chuc_vu (INT, Foreign Key nối với chuc_vu.id_chuc_vu): Xác định chức vụ/phân quyền. 
+id_phong_ban (INT, Foreign Key nối với phong_ban.id_phong_ban): Xác định phòng ban trực thuộc. 
+trang_thai_hoat_dong (BOOLEAN): Trạng thái tài khoản (Đang hoạt động hoặc Đã khóa). 
+ngay_tao (TIMESTAMP): Thời gian khởi tạo tài khoản. 
+Bảng 4: loai_tai_lieu (Quản lý Danh mục Loại Văn bản)
+id_loai_tai_lieu (INT, Primary Key, Auto Increment): Mã định danh loại tài liệu. 
+ten_loai (VARCHAR(100), Unique): Tên loại văn bản hành chính (Ví dụ: Công văn đến, Công văn đi, Tờ trình). 
+mo_ta_quy_chuan (VARCHAR(255)): Mô tả các quy chuẩn khi trích xuất. 
+Bảng 5: tai_lieu (Quản lý Thông tin Tài liệu Số hóa chính)
+id_tai_lieu (INT, Primary Key, Auto Increment): Mã định danh tài liệu số hóa. 
+id_loai_tai_lieu (INT, Foreign Key nối với loai_tai_lieu.id_loai_tai_lieu): Loại văn bản. 
+id_phong_ban_so_huu (INT, Foreign Key nối với phong_ban.id_phong_ban): Phòng ban sở hữu. 
+so_hieu_van_ban (VARCHAR(100), Index): Số hiệu gốc của văn bản (Đánh chỉ mục). 
+ngay_ban_hanh (DATE, Index): Ngày ban hành đã chuẩn hóa YYYY-MM-DD (Đánh chỉ mục). 
+co_quan_ban_hanh (VARCHAR(255)): Cơ quan hoặc người ký ban hành văn bản. 
+trich_yeu_noi_dung (TEXT): Tiêu đề hoặc trích yếu nội dung chính. 
+toan_van_chu_tho (LONGTEXT): Toàn bộ chuỗi chữ thuần phục vụ Full-text Search. 
+ten_file_goc (VARCHAR(255)): Tên tệp tin gốc khi tải lên. 
+duong_dan_file (VARCHAR(255)): Đường dẫn vật lý lưu tệp tin đã mã hóa UUID trên ổ cứng. 
+trang_thai (VARCHAR(50)): Trạng thái xử lý (CHO_XAC_NHAN, DA_LUU, THAT_BAI). 
+id_nguoi_tao (INT, Foreign Key nối với nguoi_dung.id_nguoi_dung). 
+id_nguoi_cap_nhat (INT, Foreign Key nối với nguoi_dung.id_nguoi_dung). 
+ngay_day_len (TIMESTAMP): Thời gian tải tài liệu lên. 
+ngay_cap_nhat_cuoi (TIMESTAMP): Thời gian chỉnh sửa dữ liệu gần nhất. 
+Bảng 6: lich_su_thao_tac (Nhật ký Hệ thống - Audit Log bảo mật)
+id_log (INT, Primary Key, Auto Increment): Mã định danh bản ghi nhật ký. 
+id_tai_lieu (INT, Foreign Key nối với tai_lieu.id_tai_lieu): Tài liệu chịu tác động. 
+id_nguoi_dung (INT, Foreign Key nối với nguoi_dung.id_nguoi_dung): Nhân viên thực hiện. 
+hanh_dong (VARCHAR(50)): Loại thao tác (Ví dụ: TAI_LEN, OCR_THANH_CONG, SUA_DOI_FORM). 
+chi_tiet_thay_doi (TEXT): Ghi nhận dữ liệu cũ và mới dưới dạng cấu trúc JSON. 
+thoi_gian_thuc_hien (TIMESTAMP): Thời điểm thực hiện thao tác. 
+Bảng 7: nhan_tai_lieu (Danh mục Nhãn phân loại phụ - Tags)
+id_nhan (INT, Primary Key, Auto Increment): Mã định danh thẻ nhãn. 
+ten_nhan (VARCHAR(50), Unique): Tên nhãn phụ (Ví dụ: Mật, Khẩn, Dự án Q1). 
+mau_sac_hien_thi (VARCHAR(7)): Mã màu HEX phục vụ hiển thị giao diện. 
+Bảng 8: chi_tiet_nhan (Bảng trung gian thiết lập mối quan hệ Nhiều - Nhiều)
+id_tai_lieu (INT, Foreign Key): Mã tài liệu số hóa. 
+id_nhan (INT, Foreign Key): Mã nhãn được gắn cho tài liệu. 
+Ghi chú: Cặp (id_tai_lieu, id_nhan) đóng vai trò là Khóa chính tổ hợp (Composite Primary Key). 
+3.2. Mã nguồn khởi tạo cơ sở dữ liệu vật lý (SQL DDL Script)
+-- =========================================================
+-- SCRIPT KHỞI TẠO CƠ SỞ DỮ LIỆU CHUẨN SQL SERVER (T-SQL)
+-- =========================================================
+-- 1. TẠO BẢNG PHÒNG BAN
+CREATE TABLE phong_ban (
+    id_phong_ban INT IDENTITY(1,1),
+    ma_phong_ban VARCHAR(20) NOT NULL UNIQUE,
+    ten_phong_ban NVARCHAR(100) NOT NULL UNIQUE,
+    mo_ta NVARCHAR(255) NULL,
+    CONSTRAINT PK_phong_ban PRIMARY KEY (id_phong_ban)
+);
+-- 2. TẠO BẢNG CHỨC VỤ
+CREATE TABLE chuc_vu (
+    id_chuc_vu INT IDENTITY(1,1),
+    ten_chuc_vu NVARCHAR(50) NOT NULL UNIQUE,
+    mo_ta NVARCHAR(255) NULL,
+    CONSTRAINT PK_chuc_vu PRIMARY KEY (id_chuc_vu)
+);
+-- 3. TẠO BẢNG NGƯỜI DÙNG
+CREATE TABLE nguoi_dung (
+    id_nguoi_dung INT IDENTITY(1,1),
+    ten_dang_nhap VARCHAR(50) NOT NULL UNIQUE,
+    mat_khau_ma_hoa VARCHAR(255) NOT NULL,
+    ho_ten NVARCHAR(100) NOT NULL,
+    email VARCHAR(100) NULL UNIQUE,
+    id_chuc_vu INT NOT NULL,
+    id_phong_ban INT NULL,
+    trang_thai_hoat_dong BIT DEFAULT 1, -- SQL Server dùng BIT thay cho BOOLEAN
+    ngay_tao DATETIME DEFAULT GETDATE(), -- Dùng GETDATE() thay cho CURRENT_TIMESTAMP
+    CONSTRAINT PK_nguoi_dung PRIMARY KEY (id_nguoi_dung),
+    CONSTRAINT FK_nguoi_dung_chuc_vu FOREIGN KEY (id_chuc_vu) REFERENCES chuc_vu(id_chuc_vu),
+    CONSTRAINT FK_nguoi_dung_phong_ban FOREIGN KEY (id_phong_ban) REFERENCES phong_ban(id_phong_ban) ON DELETE SET NULL
+);
+-- 4. TẠO BẢNG DANH MỤC LOẠI TÀI LIỆU
+CREATE TABLE loai_tai_lieu (
+    id_loai_tai_lieu INT IDENTITY(1,1),
+    ten_loai NVARCHAR(100) NOT NULL UNIQUE,
+    mo_ta_quy_chuan NVARCHAR(255) NULL,
+    CONSTRAINT PK_loai_tai_lieu PRIMARY KEY (id_loai_tai_lieu)
+);
+-- 5. TẠO BẢNG TÀI LIỆU SỐ HÓA
+CREATE TABLE tai_lieu (
+    id_tai_lieu INT IDENTITY(1,1),
+    id_loai_tai_lieu INT NULL,
+    id_phong_ban_so_huu INT NULL,
+    so_hieu_van_ban VARCHAR(100) NULL,              
+    ngay_ban_hanh DATE NULL,                        
+    co_quan_ban_hanh NVARCHAR(255) NULL,             
+    trich_yeu_noi_dung NVARCHAR(MAX) NOT NULL, -- Dùng NVARCHAR(MAX) thay cho TEXT              
+    toan_van_chu_tho NVARCHAR(MAX) NULL,     -- Dùng NVARCHAR(MAX) thay cho LONGTEXT            
+    ten_file_goc NVARCHAR(255) NOT NULL,             
+    duong_dan_file VARCHAR(255) NOT NULL,           
+    trang_thai VARCHAR(50) DEFAULT 'CHO_XAC_NHAN',   
+    id_nguoi_tao INT NOT NULL,
+    id_nguoi_cap_nhat INT NULL,
+    ngay_day_len DATETIME DEFAULT GETDATE(),
+    ngay_cap_nhat_cuoi DATETIME NULL,
+    CONSTRAINT PK_tai_lieu PRIMARY KEY (id_tai_lieu), -- Đặt tên khóa chính cố định phục vụ Full-Text Index
+    CONSTRAINT FK_tai_lieu_loai FOREIGN KEY (id_loai_tai_lieu) REFERENCES loai_tai_lieu(id_loai_tai_lieu) ON DELETE SET NULL,
+    CONSTRAINT FK_tai_lieu_phong_ban FOREIGN KEY (id_phong_ban_so_huu) REFERENCES phong_ban(id_phong_ban) ON DELETE SET NULL,
+    CONSTRAINT FK_tai_lieu_nguoi_tao FOREIGN KEY (id_nguoi_tao) REFERENCES nguoi_dung(id_nguoi_dung),
+    CONSTRAINT FK_tai_lieu_nguoi_sua FOREIGN KEY (id_nguoi_cap_nhat) REFERENCES nguoi_dung(id_nguoi_dung)
+);
+-- 6. TẠO BẢNG NHẬT KÝ THAO TÁC
+CREATE TABLE lich_su_thao_tac (
+    id_log INT IDENTITY(1,1),
+    id_tai_lieu INT NOT NULL,
+    id_nguoi_dung INT NOT NULL,
+    hanh_dong VARCHAR(50) NOT NULL,
+    chi_tiet_thay_doi NVARCHAR(MAX) NULL,
+    thoi_gian_thuc_hien DATETIME DEFAULT GETDATE(),
+    CONSTRAINT PK_lich_su_thao_tac PRIMARY KEY (id_log),
+    CONSTRAINT FK_log_tai_lieu FOREIGN KEY (id_tai_lieu) REFERENCES tai_lieu(id_tai_lieu) ON DELETE CASCADE,
+    CONSTRAINT FK_log_nguoi_dung FOREIGN KEY (id_nguoi_dung) REFERENCES nguoi_dung(id_nguoi_dung)
+);
+-- 7. TẠO BẢNG DANH MỤC NHÃN
+CREATE TABLE nhan_tai_lieu (
+    id_nhan INT IDENTITY(1,1),
+    ten_nhan NVARCHAR(50) NOT NULL UNIQUE,
+    mau_sac_hien_thi VARCHAR(7) DEFAULT '#6c757d',
+    CONSTRAINT PK_nhan_tai_lieu PRIMARY KEY (id_nhan)
+);
+-- 8. TẠO BẢNG TRUNG GIAN GẮN NHÃN TÀI LIỆU
+CREATE TABLE chi_tiet_nhan (
+    id_tai_lieu INT NOT NULL,
+    id_nhan INT NOT NULL,
+    CONSTRAINT PK_chi_tiet_nhan PRIMARY KEY (id_tai_lieu, id_nhan),
+    CONSTRAINT FK_chi_tiet_nhan_tai_lieu FOREIGN KEY (id_tai_lieu) REFERENCES tai_lieu(id_tai_lieu) ON DELETE CASCADE,
+    CONSTRAINT FK_chi_tiet_nhan_nhan FOREIGN KEY (id_nhan) REFERENCES nhan_tai_lieu(id_nhan) ON DELETE CASCADE
+);
+GO
+-- =========================================================
+-- CẤU HÌNH CÁC CHỈ MỤC (INDEX) CHO SQL SERVER
+-- =========================================================
+-- Chỉ mục B-Tree thông thường
+CREATE INDEX idx_so_hieu ON tai_lieu (so_hieu_van_ban);
+CREATE INDEX idx_ngay_ban_hanh ON tai_lieu (ngay_ban_hanh);
+GO
+-- Cấu hình Full-Text Search trong SQL Server
+-- Bước A: Tạo Full-Text Catalog mặc định
+CREATE FULLTEXT CATALOG ocr_catalog AS DEFAULT;
+GO
+-- Bước B: Tạo Full-Text Index trên bảng tài liệu (Khóa chính được chỉ định là PK_tai_lieu)
+CREATE FULLTEXT INDEX ON tai_lieu(trich_yeu_noi_dung, toan_van_chu_tho)
+KEY INDEX PK_tai_lieu
+ON ocr_catalog;
+GO
+-- =========================================================
+-- TRIGGER TỰ ĐỘNG CẬP NHẬT TRƯỜNG "ngay_cap_nhat_cuoi"
+-- =========================================================
+CREATE TRIGGER trg_tai_lieu_Update
+ON tai_lieu
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE tai_lieu
+    SET ngay_cap_nhat_cuoi = GETDATE()
+    FROM tai_lieu t
+    INNER JOIN inserted i ON t.id_tai_lieu = i.id_tai_lieu;
+END;
+GO4. SƠ ĐỒ MỐI QUAN HỆ THỰC THỂ (ERD LOGIC DESCRIPTION)
+Mô tả liên kết logic giữa các thực thể để phục vụ việc thiết kế sơ đồ biểu đồ quan hệ: 
+chuc_vu (1) —— (N) nguoi_dung: Một chức vụ (ví dụ: Nhân viên) có thể gán cho nhiều người dùng. Một người dùng bắt buộc phải thuộc về một chức vụ. 
+phong_ban (1) —— (N) nguoi_dung: Một phòng ban quản lý nhiều nhân viên. Nhân viên rời phòng ban sẽ được gán giá trị SET NULL. 
+loai_tai_lieu (1) —— (N) tai_lieu: Một loại tài liệu (ví dụ: Tờ trình nội bộ) có thể có nhiều văn bản thuộc về nó. 
+nguoi_dung (1) —— (N) tai_lieu (id_nguoi_tao): Một nhân viên có thể tải lên và số hóa nhiều tài liệu khác nhau. 
+nguoi_dung (1) —— (N) tai_lieu (id_nguoi_cap_nhat): Một nhân viên có thể vào kiểm duyệt và chỉnh sửa dữ liệu cho nhiều tài liệu. 
+tai_lieu (1) —— (N) lich_su_thao_tac: Một tài liệu lưu vết nhiều hành động logs. Tài liệu bị xóa sẽ tự động giải phóng logs tương ứng qua cơ chế ON DELETE CASCADE. 
+tai_lieu (M) —— (N) nhan_tai_lieu: Kết nối Nhiều - Nhiều thông qua bảng trung gian nhằm gán nhãn linh hoạt cho văn bản hành chính. 
+5. QUY TRÌNH XỬ LÝ DỮ LIỆU CHI TIẾT (PROCESSING PIPELINE)
+Quy trình biến đổi một tệp tài liệu thô (Ảnh chụp/PDF) thành dữ liệu số hóa có cấu trúc trong hệ thống được thực hiện qua bốn giai đoạn tuần tự khép kín: 
+Plaintext
+[Tệp ảnh/PDF gốc] 
+       │
+       ▼
+ 1. TIỀN XỬ LÝ ẢNH ────► (Xoay thẳng, Lọc nhiễu, Nhị phân hóa Otsu)
+       │
+       ▼
+ 2. TẦNG QUÉT OCR  ────► (Tesseract OCR với LSTM Engine -> Chuỗi chữ thô)
+       │
+       ▼
+ 3. CHUẨN HÓA CHUỖI ───► (Text Normalization: Xử lý khoảng trắng, lỗi xuống dòng)
+       │
+       ▼
+ 4. TRÍCH XUẤT THÔNG TIN
+       ├── HỆ LUẬT REGEX ──────► Trích xuất: Số hiệu, Ngày ban hành, Trích yếu
+       └── BỘ LỌC NLP (NER) ───► Trích xuất: Cơ quan ban hành, Người ký (VnCoreNLP)
+       │
+       ▼
+[Biểu mẫu dữ liệu cấu trúc lưu vào MySQL]
+Giai đoạn 1: Tiếp nhận và Tiền xử lý ảnh (Image Pre-processing): Tệp tin sau khi tải lên nếu là PDF sẽ được chuyển đổi thành các trang ảnh độc lập. Module sử dụng thư viện OpenCV để thực hiện: xoay ảnh về góc thẳng (Deskewing), chuyển ảnh màu sang ảnh xám (Grayscale), lọc nhiễu Gaussian và áp dụng thuật toán Nhị phân hóa thích nghi Otsu để tối ưu độ tương phản giữa chữ và nền giấy. 
+Giai đoạn 2: Nhận dạng ký tự quang học (OCR Engine): Sử dụng lõi công nghệ Tesseract OCR v5.x kết hợp file ngôn ngữ tiếng Việt (vie.traineddata). Tầng này phân tích bố cục dòng và chuyển đổi các vùng điểm ảnh chứa ký tự thành chuỗi văn bản thuần (Raw Text). 
+Giai đoạn 3: Chuẩn hóa văn bản (Text Normalization): Áp dụng lý thuyết xử lý ngôn ngữ tại Chương 2 (Jurafsky & Martin, 2024). Chuỗi ký tự thô từ bộ OCR thường dính lỗi xuống dòng ngắt quãng hoặc khoảng trắng không đều. Hệ thống sẽ tiến hành xóa bỏ các ký tự điều khiển ẩn, đồng bộ hóa bảng mã Unicode dựng sẵn và chuẩn hóa các dấu câu tiếng Việt để tránh làm sai lệch biểu thức khớp mẫu. 
+Giai đoạn 4: Trích xuất thông tin hỗn hợp (Hybrid Information Extraction):
+Đối với Số hiệu, Ngày ban hành, Trích yếu: Sử dụng hệ luật Biểu thức chính quy (Regex) do cấu trúc các trường này trên văn bản hành chính tuân thủ nghiêm ngặt Thông tư quy định về thể thức văn bản của Chính phủ. 
+Đối với Cơ quan/Người ban hành: Do tính chất tên cơ quan và tên người biến đổi vô định, hệ thống tích hợp công cụ VnCoreNLP áp dụng mô hình Nhận dạng thực thể có tên (Named Entity Recognition - NER) để bóc tách các phân lớp thực thể tổ chức (B-ORG, I-ORG) và thực thể người (B-PER, I-PER). 
+6. KỊCH BẢN LUỒNG DỮ LIỆU CHI TIẾT (STEP-BY-STEP WORKFLOW)
+Khi người dùng thực hiện số hóa một tài liệu, hệ thống sẽ tự động vận hành tuần tự qua 5 bước nghiêm ngặt sau: 
+Bước 1: Tiếp nhận và Kiểm tra tài liệu (Upload & Validation):
+Hành động của người dùng: Nhân viên truy cập vào giao diện Web, tải lên file ảnh (JPG, PNG) hoặc file PDF của văn bản hành chính và bấm nút "Phân tích hệ thống". 
+Hệ thống xử lý: Backend nhận file từ HTTP Request, kiểm tra tính hợp lệ (định dạng tệp, dung lượng giới hạn dưới 10MB). Nếu hợp lệ, tệp được lưu vào thư mục hệ thống và gán một trạng thái tạm thời là Chờ xác nhận. 
+Bước 2: Tiền xử lý hình ảnh (Image Pre-processing):
+Hệ thống xử lý: Để tăng tỷ lệ đọc chính xác của AI, hệ thống dùng thư viện OpenCV hoặc Pillow để xử lý tệp ảnh gốc: Chuyển đổi ảnh sang hệ màu xám (Grayscale); Áp dụng thuật toán Nhị phân hóa (Binarization) đưa ảnh về hai màu đen - trắng rõ rệt; Tự động căn chỉnh góc nghiêng (Deskewing) nếu ảnh chụp bị lệch, méo. 
+Bước 3: Nhận dạng ký tự quang học (Optical Character Recognition - OCR):
+Hệ thống xử lý: Mã nguồn Backend chuyển tệp ảnh đã làm sạch ở Bước 2 qua thư viện Pytesseract. Bộ nhận diện AI quét các vùng ảnh, nhận dạng các ký tự tiếng Việt có dấu và chuyển đổi thành một chuỗi văn bản thuần (Raw Text) duy nhất, giữ nguyên cấu trúc xuống dòng. 
+Bước 4: Trích xuất thông tin bằng Hệ luật (Information Extraction - IE):
+Hệ thống xử lý: Chuỗi văn bản thuần ở Bước 3 được đưa qua bộ lọc cấu trúc sử dụng các biểu thức chính quy (Regular Expression - Regex) phối hợp với quy tắc vị trí văn bản hành chính Việt Nam: 
+Trích xuất Số hiệu: Quét tìm các mẫu định dạng chuỗi bắt đầu bằng từ khóa như Số: hoặc Số/No. kết hợp phía sau là dãy số và ký tự viết hoa phân tách bằng dấu gạch chéo (Ví dụ: Số:\s*([0-9]+/QĐ\-UBND)). 
+Trích xuất Ngày tháng: Quét tìm chuỗi có cấu trúc ngày...tháng...năm... để bóc tách các con số, sau đó chuyển đổi về định dạng YYYY-MM-DD. 
+Trích xuất Trích yếu: Quét tìm từ khóa bắt đầu bằng kí tự V/v: (Về việc), lấy toàn bộ chuỗi ký tự liền sau cho đến dấu ngắt dòng. 
+Trích xuất Nơi ban hành & Người ký: Sử dụng thư viện NLP tiếng Việt VnCoreNLP chuyên biệt để thực hiện nhận diện thực thể tên tổ chức/cơ quan ban hành hoặc tên người ký đóng dấu cuối văn bản. 
+Bước 5: Kiểm duyệt dữ liệu và Lưu trữ chính thức (Verification & Storage):
+Hệ thống xử lý: Backend đóng gói toàn bộ 4 trường thông tin đã trích xuất tự động cùng với chuỗi Raw Text thành định dạng dữ liệu JSON và phản hồi ngược lại cho Frontend. 
+Hành động của người dùng: Trên giao diện Web hiển thị cơ chế song song: Một bên là ảnh gốc của tài liệu, một bên là Form nhập liệu đã được điền sẵn dữ liệu trích xuất. Người dùng kiểm tra bằng mắt: Nếu máy trích xuất đúng thì giữ nguyên, nếu có ký tự bị đọc sai do ảnh mờ, người dùng trực tiếp chỉnh sửa lại trên ô nhập liệu của Form. 
+Lưu trữ cuối cùng: Khi người dùng bấm nút "Xác nhận lưu trữ", dữ liệu chuẩn cuối cùng được gửi về Backend để ghi chính thức vào cơ sở dữ liệu (MySQL/PostgreSQL). Trạng thái tài liệu chuyển sang Đã lưu chính thức, sẵn sàng cho các tác vụ tìm kiếm, tra cứu sau này. 
+7. THIẾT KẾ DANH SÁCH API (API ENDPOINTS DESIGN)
+Hệ thống giao tiếp nội bộ giữa Frontend và Backend thông qua các RESTful API chuẩn: 
+HTTP Method
+API Endpoint
+Mô tả chức năng
+POST
+/api/v1/documents/upload
+Nhận file tải lên, kích hoạt quy trình xử lý OpenCV $\rightarrow$ OCR $\rightarrow$ Regex. Trả về kết quả JSON để điền tự động vào Form giao diện. 
+POST
+/api/v1/documents/save
+Nhận dữ liệu Form cuối cùng sau khi người dùng đã kiểm duyệt/sửa đổi để lưu chính thức vào cơ sở dữ liệu. 
+GET
+/api/v1/documents/search
+Thực hiện truy vấn tìm kiếm văn bản dựa trên các bộ lọc đầu vào: Số hiệu, khoảng ngày ban hành, hoặc tìm từ khóa trong toàn văn. 
+GET
+/api/v1/documents/<id>
+Truy xuất thông tin chi tiết của một văn bản cụ thể và lấy đường dẫn tải/xem file gốc. 
+8. KỊCH BẢN XỬ LÝ LỖI CỦA HỆ THỐNG (ERROR HANDLING WORKFLOW)
+Khi hệ thống vận hành thực tế với số lượng tài liệu lớn, hệ thống áp dụng cơ chế tự động xử lý và phục hồi như sau: 
+Trường hợp 1: Ảnh tải lên quá mờ hoặc bị lỗi định dạng file không đọc được chữ (Lỗi OCR)
+Cách hệ thống xử lý: Hệ thống không làm treo ứng dụng. Bộ lọc tác vụ ngầm (Celery Worker) bắt được ngoại lệ (Exception), tự động cập nhật trường trang_thai trong bảng tai_lieu thành THAT_BAI. Tại giao diện Web, hệ thống hiển thị một dòng thông báo đỏ: "Hệ thống không thể nhận diện được chữ trong văn bản này. Vui lòng kiểm tra lại chất lượng tệp ảnh hoặc tự nhập thủ công." Hệ thống mở khóa Form nhập liệu trống 100% để người dùng tự gõ tay bằng mắt, tránh làm gián đoạn công việc. 
+Trường hợp 2: AI đọc đúng nhưng trích xuất sai thông tin (Lỗi Regex)
+Cách hệ thống xử lý: Hệ thống vẫn cho phép quy trình chạy tiếp bình thường, không báo lỗi hệ thống. Các trường không tìm thấy sẽ được gán giá trị mặc định là NULL hoặc chuỗi trống "". Riêng trường toan_van_chu_tho vẫn lưu đầy đủ chuỗi ký tự thô. Khi trả kết quả về giao diện Form, ô nhập liệu nào máy không tìm thấy sẽ để trống và tô viền đỏ nhẹ để người dùng nhìn vào ảnh gốc kế bên điền bổ sung trước khi bấm lưu chính thức. 
+Trường hợp 3: Máy chủ Worker xử lý ngầm (Celery) đột ngột bị sập khi đang OCR
+Cách hệ thống xử lý (Cơ chế Fail-safe): Vì trước khi xử lý, file đã được lưu vật lý và một bản ghi có trạng thái PROCESSING đã được tạo trong MySQL. Khi máy chủ khởi động lại, hệ thống chạy một đoạn mã tự động kiểm tra (Startup Script) quét các bản ghi bị kẹt trạng thái PROCESSING quá 15 phút, ném ngược lại vào hàng đợi Redis để các Worker tiến hành quét lại từ đầu, đảm bảo không bị sót tệp dữ liệu. 
+9. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)
+9.1. Hiệu năng và Tốc độ xử lý (Performance & Scalability)
+Thời gian phản hồi API tải lên: Nhờ cơ chế xếp hàng bất đồng bộ (Celery + Redis), thời gian phản hồi từ lúc bấm "Tải lên" cho đến khi nhận được thông báo "Đang xử lý ngầm" phải dưới 200 mili-giây (under 0.2 giây). 
+Thời gian xử lý OCR và Trích xuất: Thời gian máy chủ xử lý ngầm một trang văn bản chuẩn (bao gồm OpenCV + OCR + Regex) không được quá 5 giây/trang đối với thư viện mã nguồn mở và không quá 2 giây/trang đối với việc gọi API đám mây. 
+Khả năng chịu tải đồng thời: Hệ thống tại tầng Web Server phải chịu được tối thiểu 100 người dùng truy cập và tra cứu tài liệu đồng thời tại một thời điểm mà không làm tăng thời gian phản hồi trang quá 2 giây. 
+9.2. Tính sẵn sàng và Khả năng chịu lỗi (Availability & Fault Tolerance)
+Chỉ số sẵn sàng: Hệ thống quản lý tài liệu nội bộ phải đảm bảo hoạt động liên tục với chỉ số Uptime đạt 99.5% trong giờ hành chính của cơ quan, doanh nghiệp. 
+Cơ chế lưu tạm an toàn: Khi hệ thống xử lý ngầm gặp lỗi đột ngột, tệp tin gốc của người dùng bắt buộc không được mất mát và phải giữ nguyên trạng thái CHO_XAC_NHAN hoặc PROCESSING trong cơ sở dữ liệu để phục vụ quét lại. 
+9.3. Độ chính xác của Trích xuất thông tin (Data Accuracy)
+Tỷ lệ nhận diện chữ (OCR Accuracy): Đối với các văn bản hành chính chuẩn có chất lượng ảnh rõ nét hoặc file quét kỹ thuật số, tỷ lệ nhận diện đúng ký tự tiếng Việt của bộ OCR phải đạt tối thiểu 90%. 
+Tỷ lệ trích xuất đúng (Regex Extraction Accuracy): Hệ thống luật Regex phải bắt chính xác 100% đối với các trường thông tin tuân thủ đúng quy chuẩn ban hành văn bản hành chính của Nhà nước (ví dụ: cấu trúc Số: .../QĐ-... hoặc định dạng ngày tháng ngày... tháng... năm...). 
+9.4. An toàn và Bảo mật thông tin (Security & Privacy)
+Mã hóa mật khẩu: Toàn bộ mật khẩu của tài khoản nhân viên lưu trong bảng nguoi_dung bắt buộc phải được băm bằng các thuật toán một chiều an toàn như Bcrypt hoặc PBKDF2, tuyệt đối không lưu mật khẩu dưới dạng văn bản thô. 
+Phân quyền truy cập (RBAC): Hệ thống kiểm soát chặt chẽ quyền hạn dựa trên bảng chuc_vu. Nhân viên có quyền STAFF chỉ được phép upload, xem và sửa đổi tài liệu do mình quản lý; chỉ tài khoản ADMIN mới có quyền xóa tài liệu hoặc quản lý danh mục cấu hình hệ thống. 
+Bảo mật lưu trữ file: Thư mục lưu trữ tệp tin gốc (media/uploads/) trên máy chủ phải được cấu hình ẩn, không cho phép truy cập trực tiếp từ đường dẫn URL ngoài Internet nếu người dùng chưa đăng nhập hệ thống thành công. 
+9.5. Tính tương thích và Khả năng bảo trì (Usability & Maintainability)
+Giao diện đáp ứng: Giao diện Bootstrap của hệ thống phải hiển thị tốt, không bị vỡ khung trên các độ phân giải màn hình phổ biến của máy tính văn phòng (từ màn hình HD 1366 x 768 đến Full HD 1920 x 1080). 
+Cấu trúc mã nguồn (Clean Code): Mã nguồn Python xử lý Regex trích xuất thông tin phải được thiết kế dạng các hàm độc lập (Modular), có ghi chú giải thích rõ ràng ý nghĩa của từng chuỗi biểu thức chính quy để dễ dàng cập nhật hoặc bổ sung loại văn bản mới. 
+10. THIẾT KẾ BẢO MẬT HỆ THỐNG (SECURITY DESIGN)
+Hệ thống áp dụng mô hình bảo mật nhiều lớp để bảo vệ tài liệu hành chính nội bộ: 
+Bảo mật tầng Giao thức (Transport Layer Security): Toàn bộ dữ liệu truyền tải qua lại giữa Trình duyệt (Frontend) và Máy chủ (Backend) bắt buộc phải cấu hình qua giao thức mã hóa HTTPS (SSL/TLS) nhằm chống lại các cuộc tấn công nghe lén (Man-in-the-middle). 
+Xác thực và Duy trì phiên (Authentication & Session): Hệ thống sử dụng cơ chế Session-based Authentication hoặc mã thông báo JWT (JSON Web Token) được lưu nghiêm ngặt trong HttpOnly Cookie ở trình duyệt nhằm chống lại lỗi bảo mật XSS (Cross-Site Scripting). Khi người dùng đăng xuất hoặc hết thời gian làm việc (Session Timeout sau 30 phút), khóa truy cập sẽ tự động bị hủy. 
+Phòng chống tấn công Cơ sở dữ liệu (SQL Injection): Tại tầng code Python, tuyệt đối không dùng phương pháp cộng chuỗi SQL thô. Tất cả các câu lệnh truy vấn dữ liệu bắt buộc phải sử dụng cơ chế Parameterized Queries (Truy vấn có tham số) thông qua thư viện kết nối (như pymysql hoặc SQLAlchemy). 
+Phòng chống tải tệp độc hại (Malicious File Upload Protection): Hệ thống kiểm tra mã Hex đầu tệp (MIME Type Validation) để đảm bảo người dùng không đổi tên một file mã độc thành định dạng ảnh rồi tải lên phá hoại máy chủ. Tên file gốc của người dùng sẽ được hệ thống tự động băm lại bằng thuật toán UUID trước khi lưu vào ổ cứng để tránh lộ cấu trúc thư mục. 
+11. CƠ CHẾ TÌM KIẾM NÂNG CAO (ADVANCED SEARCH MECHANISM)
+Để người dùng tìm lại tài liệu nhanh chóng trong kho dữ liệu lớn, hệ thống phân tách bộ lọc tìm kiếm thành hai lớp xử lý: 
+11.1. Tìm kiếm theo thuộc tính cố định (Structured Search)
+Người dùng tìm kiếm bằng cách điền vào các ô lọc trên giao diện. Backend sẽ sinh ra câu lệnh SQL sử dụng mệnh đề WHERE kết hợp với các chỉ mục (Index) đã được cài đặt sẵn: 
+Tìm theo khoảng ngày: SELECT * FROM tai_lieu WHERE ngay_ban_hanh BETWEEN '2026-01-01' AND '2026-05-27';
+Tìm theo loại và số hiệu: SELECT * FROM tai_lieu WHERE id_loai_tai_lieu = 1 AND so_hieu_van_ban LIKE '%QĐ-UBND%';
+11.2. Tìm kiếm toàn văn nâng cao (Full-text Search - FTS)
+Khi người dùng gõ một từ khóa xuất hiện bên trong nội dung văn bản (Ví dụ: "Khen thưởng đột xuất"), hệ thống sử dụng tính năng MySQL Full-text Search cấu hình trên hai trường trich_yeu_noi_dung và toan_van_chu_tho. Cú pháp SQL xử lý ngầm: 
+SQL
+SELECT *, MATCH(trich_yeu_noi_dung, toan_van_chu_tho) AGAINST('khen thưởng đột xuất' IN NATURAL LANGUAGE MODE) AS muc_do_chinh_xac
+FROM tai_lieu
+WHERE MATCH(trich_yeu_noi_dung, toan_van_chu_tho) AGAINST('khen thưởng đột xuất' IN NATURAL LANGUAGE MODE)
+ORDER BY muc_do_chinh_xac DESC;
+Ưu điểm: Hệ thống tìm ra file cực nhanh nhờ cây chỉ mục FTS kết hợp bộ Parser Ngram tiếng Việt, đồng thời tự động tính toán điểm số (độ liên quan) để đẩy các văn bản chứa chính xác từ khóa lên đầu danh sách. 
+12. CẤU TRÚC THƯ MỤC MÃ NGUỒN DỰ ÁN (PROJECT STRUCTURE)
+Hệ thống được tổ chức theo mô hình kiến trúc phân lớp rõ ràng, tách biệt giữa tầng xử lý lõi (Core Engine), tầng dịch vụ backend (API/Web Server) và giao diện người dùng (Frontend), đảm bảo tính dễ bảo trì và mở rộng theo chuẩn Kỹ thuật phần mềm: 
+Plaintext
+LuanVan_Digitization/
+│
+├── app.py                  # Điểm khởi chạy ứng dụng Web (Flask/Django)
+├── config.py               # Cấu hình hệ thống (Biến môi trường, DB, Redis, OCR)
+├── database.py             # Quản lý kết nối, đóng/mở Session MySQL
+├── requirements.txt        # Danh sách thư viện (OpenCV, Pytesseract, VnCoreNLP,...)
+│
+├── bo_xu_ly/               # TẦNG LÕI XỬ LÝ SỐ HÓA & TRÍCH XUẤT (BACKBONE ENGINE)
+│   ├── __init__.py
+│   ├── tien_xu_ly_anh.py    # Tiền xử lý ảnh bằng OpenCV (Thuật toán Otsu)
+│   ├── nhan_dang_ocr.py     # Gọi lõi Pytesseract OCR trích xuất chuỗi chữ thô
+│   ├── chuan_hoa_chuoi.py   # Text Normalization (Xử lý khoảng trắng, bảng mã chữ)
+│   ├── trich_xuat_regex.py  # Hệ luật Regex bắt Số hiệu, Ngày tháng, Trích yếu
+│   └── nhan_dang_nlp.py     # Tích hợp VnCoreNLP bắt Thực thể Cơ quan/Người ký
+│
+├── backend/                # TẦNG ĐIỀU HƯỚNG LOGIC (BUSINESS LOGIC LAYER)
+│   ├── __init__.py
+│   ├── routes_auth.py       # API Đăng nhập, phân quyền Nhân viên/Admin
+│   ├── routes_document.py   # API Tải tệp, lưu dữ liệu, lịch sử thao tác, gắn tag
+│   └── tasks.py             # Định nghĩa tác vụ bất đồng bộ cho Celery Worker
+│
+├── templates/              # TẦNG GIAO DIỆN NGƯỜI DÙNG (FRONTEND LAYER)
+│   ├── base.html           # Khung giao diện dùng chung (Navbar, Sidebar)
+│   ├── dang_nhap.html      # Màn hình xác thực tài khoản
+│   ├── tai_len.html        # Giao diện đối sánh kết quả OCR song song với ảnh gốc
+│   └── tim_kiem.html       # Trang tra cứu tài liệu nâng cao & Full-text search
+│
+├── static/                 # TÀI NGUYÊN TĨNH
+│   ├── css/                # Custom CSS và Bootstrap v5
+│   └── js/                 # Mã JavaScript điều hướng và gọi AJAX asynchronous
+│
+└── media/                  # KHO LƯU TRỮ TỆP VẬT LÝ AN TOÀN
+    └── uploads/            # Thư mục lưu trữ ảnh/PDF gốc định danh bằng UUID
+13. CƠ SỞ LÝ THUYẾT VÀ THUẬT TOÁN CỐT LÕI (THEORETICAL BACKGROUND)
+Để minh chứng cho tính khoa học và nền tảng học thuật của đề tài tốt nghiệp, hệ thống áp dụng các phương pháp toán học, xử lý ảnh và xử lý ngôn ngữ tự nhiên tiêu biểu sau: 
+13.1. Thuật toán Nhị phân hóa thích nghi Otsu (Otsu's Binarization)
+Trong mô-đun tiền xử lý ảnh (tien_xu_ly_anh.py), hệ thống sử dụng phương pháp Otsu để tự động tính toán ngưỡng (threshold) chuyển đổi ảnh xám thành ảnh nhị phân đen - trắng. Thuật toán duyệt qua tất cả các mức xám có thể có của bức ảnh nhằm tìm ra một giá trị ngưỡng $t$ tối ưu sao cho phương sai giữa hai lớp (nền giấy và ký tự chữ) đạt giá trị cực đại: 
+$$\sigma_B^2(t) = \omega_0(t)\omega_1(t)\left[\mu_0(t) - \mu_1(t)\right]^2$$
+Trong đó, $\omega_0, \omega_1$ là xác suất xuất hiện của hai lớp, và $\mu_0, \mu_1$ là trung bình mức xám của hai lớp. Phương pháp này giúp hệ thống tự động làm sạch các tài liệu bị đổ bóng hoặc có độ sáng không đều khi thu thập. 
+13.2. Kiến trúc Mạng học sâu LSTM trong Tesseract OCR
+Thư viện Pytesseract vận hành dựa trên lõi Tesseract OCR, sử dụng mô hình mạng học sâu Recurrent Neural Network với kiến trúc LSTM (Long Short-Term Memory). Thay vì nhận diện từng ký tự rời rạc, mô hình tiến hành quét văn bản theo từng dòng (Line-by-line Processing). Dữ liệu chuỗi điểm ảnh của dòng chữ được đưa qua mạng LSTM để học các đặc trưng ngữ cảnh của từ ngữ, kết hợp với bộ từ điển ngôn ngữ tiếng Việt (vie.traineddata) giúp tăng tỷ lệ nhận diện chính xác. 
+13.3. Cơ chế Khớp mẫu Chuỗi bằng Biểu thức Chính quy (Regex Engine)
+Hệ luật trích xuất thông tin hành chính sử dụng công cụ Regex nội tại của Python (Thư viện re) vận hành theo cơ chế DFA/NFA (Deterministic/Non-deterministic Finite Automaton). Chuỗi văn bản sau khi chuẩn hóa được duyệt qua cây trạng thái của biểu thức. Ví dụ, biểu thức bắt Số hiệu văn bản: (?:Số|No)\s*:\s*([0-9A-Z/\-]+) sẽ dịch chuyển trạng thái khi tìm thấy từ khóa "Số", bỏ qua khoảng trắng \s*, và bắt giữ (capture group) tập hợp các ký tự viết hoa ngăn cách bởi dấu gạch chéo để đưa vào cơ sở dữ liệu. 
+13.4. Kỹ thuật Chuẩn hóa Văn bản và Khoảng cách chỉnh sửa Levenshtein (Edit Distance)
+Chuẩn hóa văn bản (Text Normalization): Theo lý thuyết tại Chương 2 (Jurafsky & Martin, 2024), văn bản thô từ bộ OCR luôn cần qua bước làm sạch bao gồm xử lý lỗi khoảng trắng thừa, loại bỏ các ký tự xuống dòng ngắt quãng từ việc xuống dòng vật lý trên văn bản gốc, và đồng bộ cấu trúc từ. 
+Khoảng cách chỉnh sửa Levenshtein (Edit Distance): Được sử dụng làm thuật toán nền tảng để đánh giá độ chính xác của tầng OCR bằng cách đếm số hành động chèn ($I$), xóa ($D$), và thay thế ($S$) tối thiểu để biến đổi chuỗi do máy đọc thành chuỗi chuẩn (Ground Truth). Khoảng cách giữa hai chuỗi $a$ và $b$ độ dài $i, j$ được tính bằng công thức quy hoạch động: 
+$$\text{ld}(a, b) = \begin{cases} \max(i, j) & \text{nếu } \min(i, j) = 0, \\ \min \begin{cases} \text{ld}(\text{tail}(a), b) + 1 \\ \text{ld}(a, \text{tail}(b)) + 1 \\ \text{ld}(\text{tail}(a), \text{tail}(b)) + a_0 \neq b_0 \end{cases} & \text{nếu } \min(i, j) > 0. \end{cases}$$
+14. ĐẶC TẢ HỆ THỐNG BIỂU ĐỒ UML (UML SYSTEM SPECIFICATION)
+14.1. Đặc tả Sơ đồ Ca sử dụng (Use Case Specification)
+Tuân thủ các nguyên lý thiết kế phần mềm hệ thống (Sommerville, 2015), các tác nhân tương tác được phân quyền tường minh: 
+Tác nhân Nhân viên (Staff): Thực hiện các ca sử dụng cốt lõi bao gồm: Đăng nhập, Tải lên tệp tài liệu, Xem kết quả trích xuất tự động, Kiểm duyệt và chỉnh sửa dữ liệu lỗi, Xác nhận lưu trữ tài liệu, Tìm kiếm và tra cứu nâng cao. 
+Tác nhân Quản trị viên (Admin): Thừa hưởng toàn bộ quyền của Nhân viên, đồng thời bổ sung các ca sử dụng quản trị: Quản lý tài khoản, Quản lý cấu hình danh mục (Phòng ban, Loại văn bản, Thẻ nhãn), Xem nhật ký hệ thống (Audit Log). 
+14.2. Đặc tả Sơ đồ Tuần tự cho Tiến trình Số hóa Bất đồng bộ (Sequence Specification)
+Luồng đi của dữ liệu khi thực hiện ca sử dụng "Số hóa tài liệu" diễn ra tuần tự như sau: 
+Nhân viên chọn tệp ảnh/PDF trên giao diện tai_len.html và bấm nút gửi hành động. 
+Màn hình Frontend gửi HTTP POST Request chứa file vật lý tới Web Server (app.py). 
+Web Server ghi nhận file vào thư mục lưu trữ, tạo một bản ghi trạng thái CHO_XAC_NHAN vào MySQL, đồng thời đẩy ID nhiệm vụ vào hàng đợi Redis. 
+Web Server ngay lập tức phản hồi mã trạng thái HTTP 202 (Đã tiếp nhận) về cho Frontend để giải phóng giao diện người dùng. 
+Celery Worker liên tục lắng nghe từ Redis, bốc tác vụ ra và điều phối gọi liên hoàn các module tại tầng lõi: tien_xu_ly_anh $\rightarrow$ nhan_dang_ocr $\rightarrow$ chuan_hoa_chuoi $\rightarrow$ trich_xuat_regex + nhan_dang_nlp. 
+Sau khi xử lý xong, Celery Worker cập nhật chuỗi chữ thô và các trường trích xuất được vào bảng tai_lieu trong MySQL. 
+Frontend nhận được tín hiệu hoàn thành tác vụ xử lý ngầm, tự động tải dữ liệu JSON lên màn hình đối sánh để Nhân viên thực hiện kiểm duyệt và lưu trữ chính thức. 
+15. PHƯƠNG PHÁP ĐÁNH GIÁ VÀ KẾ HOẠCH THỰC NGHIỆM (EVALUATION & EXPERIMENT)
+15.1. Tập dữ liệu thực nghiệm (Dataset)
+Tác giả xây dựng một tập dữ liệu thử nghiệm nội bộ bao gồm 100 mẫu văn bản hành chính thực tế (bao gồm cả văn bản scan phẳng có chất lượng cao và văn bản chụp bằng thiết bị di động trong điều kiện ánh sáng văn phòng thực tế), được chia làm 02 nhóm chính: 
+50 văn bản thuộc loại Công văn (Đến và Đi). 
+50 văn bản thuộc loại Tờ trình nội bộ. 
+15.2. Chỉ số đánh giá độ chính xác nhận dạng ký tự (OCR Metrics)
+Độ chính xác của tầng OCR được đo lường bằng chỉ số tiêu chuẩn: 
+Chỉ số tỷ lệ lỗi ký tự CER (Character Error Rate): $CER = \frac{S + D + I}{N}$ (Trong đó: $S$ là số ký tự bị thay thế, $D$ là số ký tự bị xóa, $I$ là số ký tự bị chèn thêm, và $N$ là tổng số ký tự của văn bản chuẩn Ground Truth). Mục tiêu hệ thống đạt tỷ lệ lỗi $CER < 10\%$ (Độ chính xác $> 90\%$). 
+15.3. Chỉ số đánh giá bộ trích xuất thông tin (Information Extraction Metrics)
+Độ hiệu quả của hệ luật kết hợp mô hình NLP đối với các trường thông tin cốt lõi được đánh giá thông qua bộ ba chỉ số: Độ chính xác (Precision - $P$), Độ bao phủ (Recall - $R$) và Điểm F1-Score ($F1$): 
+Precision ($P$): Tỷ lệ phần trăm các trường thông tin hệ thống trích xuất đúng trên tổng số trường hệ thống tìm thấy. 
+Recall ($R$): Tỷ lệ phần trăm các trường thông tin hệ thống trích xuất đúng trên tổng số trường thực tế có trên văn bản gốc. 
+F1-Score ($F1$): Chỉ số trung bình điều hòa giữa Precision và Recall giúp đánh giá tổng quan năng lực của hệ luật: $F1 = 2 \times \frac{P \times R}{P + R}$
+Mục tiêu thực nghiệm: Đạt chỉ số $F1 \ge 95\%$ đối với các văn bản trình bày đúng quy chuẩn hành chính Nhà nước. 
+16. TỔNG QUAN TRIỂN KHAI HỆ THỐNG (DEPLOYMENT OVERVIEW)
+Khi đưa hệ thống từ máy tính cá nhân lên môi trường chạy thực tế tại cơ quan, cấu trúc triển khai được đóng gói bằng công nghệ Docker và điều phối qua Nginx để tối ưu hóa hiệu năng: 
+Bộ cân bằng tải và Máy chủ đảo ngược (Nginx Reverse Proxy): Tiếp nhận request từ client qua cổng 80 (HTTP) hoặc 443 (HTTPS). Nginx trực tiếp xử lý các yêu cầu tải file tĩnh (CSS, JS, Ảnh gốc trong thư mục media/) để giảm tải cho Python, các request xử lý logic điều hướng về phía sau cho Gunicorn. 
+Môi trường Đóng gói (Docker Containers): Hệ thống chia thành 4 Container độc lập chạy phối hợp qua tệp cấu hình docker-compose.yml: 
+Container 1 (Web App): Chạy ứng dụng Flask/Django kết hợp với máy chủ WSGI (Gunicorn). 
+Container 2 (Celery Worker): Chạy tiến trình xử lý ngầm, bên trong container cài đặt sẵn bộ thư viện Pytesseract OCR và OpenCV của Linux. 
+Container 3 (Redis): Làm bộ nhớ đệm (In-memory) trung chuyển hàng đợi tác vụ giữa Web App và Celery Worker. 
+Container 4 (MySQL/PostgreSQL): Hệ quản trị cơ sở dữ liệu lưu cấu trúc dữ liệu tiếng Việt của hệ thống. 
+TÀI LIỆU THAM KHẢO
+Jurafsky, D., & Martin, J. H. (2024). Speech and Language Processing (3rd ed. draft). Lấy từ https://web.stanford.edu/~jurafsky/slp3/.
+Sommerville, I. (2015). Software Engineering (10th ed.). Pearson.
+Vu, T., Nguyen, D. Q., Nguyen, D. Q., Dras, M., & Johnson, M. (2018). VnCoreNLP: A Vietnamese Natural Language Processing Toolkit. Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Demonstrations, 56–61.

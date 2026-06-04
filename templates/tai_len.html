@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Số hóa tài liệu{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="mb-1">📤 Số hóa tài liệu</h4>
+                        <div class="text-muted small">Tải PDF/JPG/PNG, hệ thống sẽ OCR rồi trả kết quả để duyệt.</div>
+                    </div>
+                </div>
+
+                <div id="alertBox" class="alert d-none"></div>
+
+                <form id="uploadForm" class="vstack gap-3" enctype="multipart/form-data">
+                    <div>
+                        <label class="form-label">Loại tài liệu</label>
+                        <select class="form-select" name="id_loai_tai_lieu">
+                            <option value="">-- Chọn loại --</option>
+                            {% for loai in loai_list %}
+                            <option value="{{ loai.id_loai_tai_lieu }}">{{ loai.ten_loai }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Tệp nguồn</label>
+                        <input type="file" class="form-control" name="file" accept=".pdf,.png,.jpg,.jpeg" required>
+                        <div class="form-text">Tối đa 10MB, hỗ trợ PDF và ảnh.</div>
+                    </div>
+                    <button class="btn btn-primary btn-lg" id="btnAnalyze" type="submit">Phân tích hệ thống</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 mb-4 d-none" id="previewCard">
+            <div class="card-body">
+                <h5 class="mb-3">Xem trước tệp</h5>
+                <img id="previewImg" class="img-fluid rounded" alt="preview">
+                <iframe id="previewPdf" class="w-100 rounded d-none" style="height: 520px; border: 0;"></iframe>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 d-none" id="formCard">
+            <div class="card-body">
+                <h5 class="mb-3">Kết quả OCR</h5>
+                <form id="saveForm" class="vstack gap-3">
+                    <input type="hidden" id="docId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Số hiệu văn bản</label>
+                            <input type="text" class="form-control field-input" id="soHieu">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày ban hành</label>
+                            <input type="date" class="form-control field-input" id="ngayBanHanh">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Cơ quan ban hành</label>
+                        <input type="text" class="form-control field-input" id="coQuan">
+                    </div>
+                    <div>
+                        <label class="form-label">Trích yếu nội dung</label>
+                        <textarea class="form-control field-input" id="trichYeu" rows="3"></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label">Toàn văn chữ thô</label>
+                        <textarea class="form-control field-input" id="toanVan" rows="8"></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label">Phân loại</label>
+                        <select class="form-select" id="loaiSelect">
+                            <option value="">-- Chọn loại tài liệu --</option>
+                            {% for loai in loai_list %}
+                            <option value="{{ loai.id_loai_tai_lieu }}">{{ loai.ten_loai }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-success" type="submit">Lưu tài liệu</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', initUploadPage);
+</script>
+{% endblock %}
